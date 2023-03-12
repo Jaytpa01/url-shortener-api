@@ -15,10 +15,12 @@ const (
 	UnsupportedMediaType ErrorType = "UNSUPPORTED"
 	BadRequest           ErrorType = "BAD_REQUEST"
 	PayloadTooLarge      ErrorType = "PAYLOAD_TOO_LARGE"
+	TooManyRequests      ErrorType = "TOO_MANY_REQUESTS"
 )
 
 var (
-	ErrUrlNotFound = errors.New("url not found")
+	ErrUrlNotFound        = errors.New("url not found")
+	ErrTokenAlreadyExists = errors.New("token already exists")
 )
 
 // ApiError is a custom error for the application.
@@ -88,6 +90,8 @@ func (ae *ApiError) Status() int {
 		return http.StatusBadRequest
 	case PayloadTooLarge:
 		return http.StatusRequestEntityTooLarge
+	case TooManyRequests:
+		return http.StatusTooManyRequests
 	default:
 		return http.StatusInternalServerError
 	}
@@ -152,6 +156,15 @@ func NewRequestPayloadTooLarge(code, msg string, opts ...ErrorOption) *ApiError 
 	}
 	applyErrorOptions(ae, opts...)
 	return ae
+}
+
+func NewTooManyRequests() *ApiError {
+	return &ApiError{
+		Type:    TooManyRequests,
+		Code:    "too-many-requests",
+		Message: "You are sending too many requests to the server.",
+		Action:  "C'mon buddy, please slow down. You are limited to 1 request/second.",
+	}
 }
 
 // applyErrorOptions is a helper function to apply any options in our error factories
