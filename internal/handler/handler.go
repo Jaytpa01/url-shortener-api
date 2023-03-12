@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/Jaytpa01/url-shortener-api/internal/service"
 	"github.com/Jaytpa01/url-shortener-api/pkg/utils"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // Handler holds the required services for the handler and app to function
@@ -40,6 +43,11 @@ func NewHandler(cfg *Config) {
 	// put it in a variable easier to work with
 	r := cfg.Router
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		render.JSON(w, r, map[string]string{
+			"status": "ok",
+		})
+	})
 	r.Get("/{token}", handler.RedirectToTargetUrl())
 	r.Get("/{token}/visits", handler.GetUrlVisits())
 	r.Post("/shorten", handler.ShortenUrl())
