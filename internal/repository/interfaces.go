@@ -9,7 +9,7 @@ import (
 // UrlRepository defines the methods the service layer expects
 // a url repository to implement.
 type UrlRepository interface {
-	FindByToken(ctx context.Context, token string) (*entity.URL, error)
-	Create(ctx context.Context, url *entity.URL) error
-	Update(ctx context.Context, url *entity.URL) error
+	FindByToken(ctx context.Context, token string) (*entity.Url, error)
+	Create(ctx context.Context, url *entity.Url) error
+	Update(ctx context.Context, url *entity.Url) error
 }
