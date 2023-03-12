@@ -24,7 +24,7 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 		return api.NewUnsupportedMediaType(
 			"incorrect-content-header",
 			"Content-Type header is not application/json",
-			`Ensure the Content-Type header is "application/json".`,
+			api.WithAction(`Ensure the Content-Type header is "application/json".`),
 		)
 	}
 
@@ -40,28 +40,28 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 		switch {
 		case errors.As(err, &syntaxError):
 			msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+			return api.NewBadRequest("json-syntax-error", msg)
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
 			msg := "Request body contains badly-formed JSON"
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+			return api.NewBadRequest("bad-json-eof-error", msg)
 
 		case errors.As(err, &unmarshalTypeError):
 			msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+			return api.NewBadRequest("invalid-field-value", msg)
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 			msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+			return api.NewBadRequest("unknown-field", msg)
 
 		case errors.Is(err, io.EOF):
 			msg := "Request body must not be empty"
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+			return api.NewBadRequest("no-empty-requests", msg)
 
 		case err.Error() == "http: request body too large":
 			msg := "Request body must not be larger than 1MB"
-			return &MalformedJSONRequest{Message: msg, Status: http.StatusRequestEntityTooLarge}
+			return api.NewRequestPayloadTooLarge("request-payload-too-large", msg)
 
 		default:
 			return err
@@ -70,7 +70,7 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
 	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		msg := "Request body must only contain a single JSON object"
-		return &MalformedJSONRequest{Message: msg, Status: http.StatusBadRequest}
+		return api.NewBadRequest("too-many-json-objects", msg)
 	}
 
 	return nil
