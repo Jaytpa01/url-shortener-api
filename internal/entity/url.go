@@ -4,10 +4,10 @@ import "time"
 
 const UrlTableName = "urls"
 
-// URL defines the domain model
-type URL struct {
+// Url defines the domain model
+type Url struct {
 	Token     string
-	TargetURL string
+	TargetUrl string
 	Visits    int
 	CreatedAt time.Time
 }
