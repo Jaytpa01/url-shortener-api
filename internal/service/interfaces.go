@@ -9,7 +9,8 @@ import (
 // UrlService defines the methods the handler layer
 // expects any url services it interacts with to implement.
 type UrlService interface {
-	ShortenUrl(ctx context.Context, url string) (*entity.URL, error)
-	LengthenUrl(ctx context.Context, url string) (*entity.URL, error)
-	GetUrlByToken(ctx context.Context, token string) (*entity.URL, error)
+	ShortenUrl(ctx context.Context, url string) (*entity.Url, error)
+	LengthenUrl(ctx context.Context, url string) (*entity.Url, error)
+	GetUrlByToken(ctx context.Context, token string) (*entity.Url, error)
+	IncrementUrlVisits(ctx context.Context, url *entity.Url) error
 }
