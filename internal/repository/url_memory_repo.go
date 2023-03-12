@@ -2,15 +2,10 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"sync"
 
+	"github.com/Jaytpa01/url-shortener-api/api"
 	"github.com/Jaytpa01/url-shortener-api/internal/entity"
-)
-
-var (
-	ErrTokenNotFound  = errors.New("token not found")
-	ErrUrlDoesntExist = errors.New("url doesn't exist")
 )
 
 type memoryRepo struct {
@@ -25,16 +20,41 @@ func NewInMemoryRepo() UrlRepository {
 	}
 }
 
+// Create is an in memory implementation of UrlRepository.Create
+func (r *memoryRepo) Create(ctx context.Context, url *entity.Url) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.urls[url.Token] = url
+	return nil
+}
+
+// FindByToken is an in memory implementation of UrlRepository.FindByToken
 func (r *memoryRepo) FindByToken(ctx context.Context, token string) (*entity.Url, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	url, ok := r.urls[token]
 	if !ok {
-		return nil, ErrTokenNotFound
+		return nil, api.ErrUrlNotFound
 	}
 
 	return url, nil
+}
+
+// Update is an in memory implementation of UrlRepository.Update
+func (r *memoryRepo) Update(ctx context.Context, url *entity.Url) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	_, ok := r.urls[url.Token]
+	if !ok {
+		return api.ErrUrlNotFound
+	}
+
+	r.urls[url.Token] = url
+
+	return nil
 }
 
 func (r *memoryRepo) GetAll(ctx context.Context) ([]*entity.Url, error) {
@@ -49,26 +69,4 @@ func (r *memoryRepo) GetAll(ctx context.Context) ([]*entity.Url, error) {
 	}
 
 	return urls, nil
-}
-
-func (r *memoryRepo) Create(ctx context.Context, url *entity.Url) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.urls[url.Token] = url
-	return nil
-}
-
-func (r *memoryRepo) Update(ctx context.Context, url *entity.Url) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	_, ok := r.urls[url.Token]
-	if !ok {
-		return ErrUrlDoesntExist
-	}
-
-	r.urls[url.Token] = url
-
-	return nil
 }
