@@ -2,10 +2,14 @@ module github.com/Jaytpa01/url-shortener-api
 
 go 1.19
 
+require golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0
+
 require (
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-chi/chi/v5 v5.0.8 // indirect
+	github.com/go-chi/httprate v0.7.1 // indirect
 	github.com/go-chi/render v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
