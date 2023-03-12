@@ -16,10 +16,21 @@ const (
 	MAX_REQUEST_BODY_SIZE = 1048576
 )
 
+// JSONDecoder is abstracted into an interface to allow us to inject mock implementations and force errors when testing
+type JSONDecoder interface {
+	DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error
+}
+
+type decoder struct{}
+
+func NewJSONDecoder() JSONDecoder {
+	return &decoder{}
+}
+
 // DecoceJSON tries to read a JSON request body and unmarshal it into dst.
 // It expects the request to have the correct content type header,
 // and checks for various errors and validates there are no invalid json fields in the request.
-func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+func (d *decoder) DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	if render.GetRequestContentType(r) != render.ContentTypeJSON {
 		return api.NewUnsupportedMediaType(
 			"incorrect-content-header",
@@ -39,28 +50,28 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
 		switch {
 		case errors.As(err, &syntaxError):
-			msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
+			msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d).", syntaxError.Offset)
 			return api.NewBadRequest("json-syntax-error", msg)
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := "Request body contains badly-formed JSON"
-			return api.NewBadRequest("bad-json-eof-error", msg)
+			msg := "Request body contains badly-formed JSON."
+			return api.NewBadRequest("json-eof-error", msg)
 
 		case errors.As(err, &unmarshalTypeError):
-			msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
+			msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d).", unmarshalTypeError.Field, unmarshalTypeError.Offset)
 			return api.NewBadRequest("invalid-field-value", msg)
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+			msg := fmt.Sprintf("Request body contains unknown field (%s).", fieldName)
 			return api.NewBadRequest("unknown-field", msg)
 
 		case errors.Is(err, io.EOF):
-			msg := "Request body must not be empty"
+			msg := "Request body must not be empty."
 			return api.NewBadRequest("no-empty-requests", msg)
 
 		case err.Error() == "http: request body too large":
-			msg := "Request body must not be larger than 1MB"
+			msg := "Request body must not be larger than 1MB."
 			return api.NewRequestPayloadTooLarge("request-payload-too-large", msg)
 
 		default:
