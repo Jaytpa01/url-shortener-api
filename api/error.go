@@ -8,13 +8,17 @@ import (
 // ErrorType holds a string and represents the integer HTTP status code for the error
 type ErrorType string
 
+// Define our 'set' of valid ErrorTypes
 const (
-	Unknown              ErrorType = "UNKNOWN"
 	NotFound             ErrorType = "NOT_FOUND"
 	Internal             ErrorType = "INTERNAL"
 	UnsupportedMediaType ErrorType = "UNSUPPORTED"
 	BadRequest           ErrorType = "BAD_REQUEST"
 	PayloadTooLarge      ErrorType = "PAYLOAD_TOO_LARGE"
+)
+
+var (
+	ErrUrlNotFound = errors.New("url not found")
 )
 
 // ApiError is a custom error for the application.
@@ -61,12 +65,14 @@ func WithDebug(debug string) ErrorOption {
 	}
 }
 
+// EnsureApiError ensures any error we return has a standard format.
+// This is commonly used in the handler layer.
 func EnsureApiError(err error) *ApiError {
 	var apiErr *ApiError
 	if errors.As(err, &apiErr) {
 		return apiErr
 	}
-	return NewUnknown(WithDebug(err.Error()))
+	return NewInternal("unknown", WithDebug(err.Error()))
 }
 
 // Status maps an ErrorType to a HTTP Status Code
@@ -75,8 +81,6 @@ func (ae *ApiError) Status() int {
 	case NotFound:
 		return http.StatusNotFound
 	case Internal:
-		return http.StatusInternalServerError
-	case Unknown:
 		return http.StatusInternalServerError
 	case UnsupportedMediaType:
 		return http.StatusUnsupportedMediaType
@@ -105,15 +109,14 @@ func NewInternal(code string, opts ...ErrorOption) *ApiError {
 	return ae
 }
 
-// NewUnknown for unknown errors. Uses HTTP Status 500
-func NewUnknown(opts ...ErrorOption) *ApiError {
+func NewNotFound(code, msg string, opts ...ErrorOption) *ApiError {
 	ae := &ApiError{
-		Type: Unknown,
-		Code: "unknown",
+		Type:    NotFound,
+		Code:    code,
+		Message: msg,
 	}
 
 	applyErrorOptions(ae, opts...)
-
 	return ae
 }
 
@@ -151,8 +154,7 @@ func NewRequestPayloadTooLarge(code, msg string, opts ...ErrorOption) *ApiError 
 	return ae
 }
 
-// applyErrorOptions is a helper function to apply any options
-// in our wrror factories
+// applyErrorOptions is a helper function to apply any options in our error factories
 func applyErrorOptions(ae *ApiError, opts ...ErrorOption) {
 	for _, opt := range opts {
 		opt(ae)
