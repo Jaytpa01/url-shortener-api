@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"strings"
 )
 
 // ErrorType holds a string and represents the integer HTTP status code for the error
@@ -14,6 +13,8 @@ const (
 	NotFound             ErrorType = "NOT_FOUND"
 	Internal             ErrorType = "INTERNAL"
 	UnsupportedMediaType ErrorType = "UNSUPPORTED"
+	BadRequest           ErrorType = "BAD_REQUEST"
+	PayloadTooLarge      ErrorType = "PAYLOAD_TOO_LARGE"
 )
 
 // ApiError is a custom error for the application.
@@ -22,14 +23,42 @@ const (
 type ApiError struct {
 	Type    ErrorType `json:"type,omitempty"`    // the type of error
 	Code    string    `json:"code,omitempty"`    // a unique code for every insance an error is created
-	Message string    `json:"message,omitempty"` // human readable msg about error
-	Action  string    `json:"action,omitempty"`  // actions you can take to resolve the error
-	Debug   string    `json:"-"`                 // the actual internal error thrown
+	Message string    `json:"message,omitempty"` // human readable message about the error
+
+	// Optional fields
+	Action string `json:"action,omitempty"` // actions you can take to resolve the error
+	Debug  string `json:"-"`                // the actual internal error thrown
 }
 
 // ApiError.Error() satisfies the standard error interface
-func (a *ApiError) Error() string {
-	return a.Message
+func (ae *ApiError) Error() string {
+	return ae.Message
+}
+
+// Option type allows us to implement optional functional parameters
+// to fill optional fields of an ApiError.
+// https://levelup.gitconnected.com/optional-function-parameter-pattern-in-golang-c1acc829307b
+//
+// Currently implemented options:
+// WithAction(action string),
+// WithDebug(debug string)
+type ErrorOption func(*ApiError)
+
+// WithAction lets us optionally append an action to
+// resolve the it to an ApiError
+func WithAction(action string) ErrorOption {
+	return func(ae *ApiError) {
+		ae.Action = action
+	}
+}
+
+// WithDebug allows us to optionally attach a debug message
+// to an error. This is usually the error itself.
+// ie. error.Error()
+func WithDebug(debug string) ErrorOption {
+	return func(ae *ApiError) {
+		ae.Debug = debug
+	}
 }
 
 func EnsureApiError(err error) *ApiError {
@@ -37,12 +66,12 @@ func EnsureApiError(err error) *ApiError {
 	if errors.As(err, &apiErr) {
 		return apiErr
 	}
-	return NewUnknown(err.Error())
+	return NewUnknown(WithDebug(err.Error()))
 }
 
 // Status maps an ErrorType to a HTTP Status Code
-func (a *ApiError) Status() int {
-	switch a.Type {
+func (ae *ApiError) Status() int {
+	switch ae.Type {
 	case NotFound:
 		return http.StatusNotFound
 	case Internal:
@@ -51,6 +80,10 @@ func (a *ApiError) Status() int {
 		return http.StatusInternalServerError
 	case UnsupportedMediaType:
 		return http.StatusUnsupportedMediaType
+	case BadRequest:
+		return http.StatusBadRequest
+	case PayloadTooLarge:
+		return http.StatusRequestEntityTooLarge
 	default:
 		return http.StatusInternalServerError
 	}
@@ -61,33 +94,67 @@ func (a *ApiError) Status() int {
 */
 
 // NewInternal for HTTP Status 500 Server Errors
-func NewInternal(code, debug string) *ApiError {
-	return &ApiError{
-		Type:  Internal,
-		Code:  code,
-		Debug: debug,
+func NewInternal(code string, opts ...ErrorOption) *ApiError {
+	ae := &ApiError{
+		Type:    Internal,
+		Code:    code,
+		Message: "An internal server error occured.",
 	}
+
+	applyErrorOptions(ae, opts...)
+	return ae
 }
 
 // NewUnknown for unknown errors. Uses HTTP Status 500
-func NewUnknown(debug string) *ApiError {
-	return &ApiError{
-		Type:  Unknown,
-		Code:  "unknown",
-		Debug: debug,
+func NewUnknown(opts ...ErrorOption) *ApiError {
+	ae := &ApiError{
+		Type: Unknown,
+		Code: "unknown",
 	}
+
+	applyErrorOptions(ae, opts...)
+
+	return ae
 }
 
-// func NewBadRequest()
+func NewBadRequest(code, msg string, opts ...ErrorOption) *ApiError {
+	ae := &ApiError{
+		Type:    BadRequest,
+		Code:    code,
+		Message: msg,
+	}
+	applyErrorOptions(ae, opts...)
+	return ae
+}
 
 // NewUnsupportedMediaType to creat HTTP Status 415 errors.
 // Often used when the Content-Type header of a request is not what its expected to be.
-func NewUnsupportedMediaType(code, msg, action string, debug ...string) *ApiError {
-	return &ApiError{
+func NewUnsupportedMediaType(code, msg string, opts ...ErrorOption) *ApiError {
+	ae := &ApiError{
 		Type:    UnsupportedMediaType,
 		Code:    code,
 		Message: msg,
-		Action:  action,
-		Debug:   strings.Join(debug, " "),
+	}
+
+	applyErrorOptions(ae, opts...)
+	return ae
+}
+
+// NewRequestPayloadTooLarge is used when returning a HTTP Status 413 error to the client.
+func NewRequestPayloadTooLarge(code, msg string, opts ...ErrorOption) *ApiError {
+	ae := &ApiError{
+		Type:    PayloadTooLarge,
+		Code:    code,
+		Message: msg,
+	}
+	applyErrorOptions(ae, opts...)
+	return ae
+}
+
+// applyErrorOptions is a helper function to apply any options
+// in our wrror factories
+func applyErrorOptions(ae *ApiError, opts ...ErrorOption) {
+	for _, opt := range opts {
+		opt(ae)
 	}
 }
