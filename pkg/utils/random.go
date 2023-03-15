@@ -15,8 +15,21 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
+// Random is an interface defining the methods we want to implement here.
+// We use an interface for mocking purposes
+type Random interface {
+	GenerateRandomString(n int) string
+}
+
+// randomiser is for our concrete implementation of Random
+type randomiser struct{}
+
+func NewRandomiser() Random {
+	return randomiser{}
+}
+
 // GenerateRandomString generates an alphanumeric string of length n.
-func GenerateRandomString(n int) string {
+func (r randomiser) GenerateRandomString(n int) string {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {

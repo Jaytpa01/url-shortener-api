@@ -8,11 +8,12 @@ import (
 
 func Test_GenerateRandomString(t *testing.T) {
 	stringMap := map[string]struct{}{}
+	r := NewRandomiser()
 
 	for lengthOfString := 6; lengthOfString < 12; lengthOfString++ {
 		for numToGenerate := 1000; numToGenerate >= 0; numToGenerate-- {
 
-			generatedString := GenerateRandomString(lengthOfString)
+			generatedString := r.GenerateRandomString(lengthOfString)
 			_, exists := stringMap[generatedString]
 
 			assert.Falsef(t, exists, "%s already exists", generatedString) // string shouldn't alrteady exist
@@ -26,10 +27,11 @@ func Test_GenerateRandomString(t *testing.T) {
 func Test_GenerateRandomString_LengthSix(t *testing.T) {
 	stringMap := map[string]struct{}{}
 	length := 6
+	r := NewRandomiser()
 
 	for numToGenerate := 100000; numToGenerate >= 0; numToGenerate-- {
 
-		generatedString := GenerateRandomString(length)
+		generatedString := r.GenerateRandomString(length)
 		_, exists := stringMap[generatedString]
 
 		assert.Falsef(t, exists, "%s already exists", generatedString) // string shouldn't alrteady exist
