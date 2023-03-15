@@ -20,3 +20,7 @@
 
 # Go workspace file
 go.work
+
+# Anything in /etc directory.
+# Holds thing like config files with secrets
+/etc
