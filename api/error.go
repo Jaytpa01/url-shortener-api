@@ -18,11 +18,6 @@ const (
 	TooManyRequests      ErrorType = "TOO_MANY_REQUESTS"
 )
 
-var (
-	ErrUrlNotFound        = errors.New("url not found")
-	ErrTokenAlreadyExists = errors.New("token already exists")
-)
-
 // ApiError is a custom error for the application.
 // It is helpful in returning a consistent
 // error response from API endpoints.
