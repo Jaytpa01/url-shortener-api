@@ -9,26 +9,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Jaytpa01/url-shortener-api/api"
+	"github.com/Jaytpa01/url-shortener-api/config"
 	"github.com/Jaytpa01/url-shortener-api/internal/handler"
 	"github.com/Jaytpa01/url-shortener-api/internal/repository"
 	"github.com/Jaytpa01/url-shortener-api/internal/service"
 	"github.com/Jaytpa01/url-shortener-api/pkg/logger"
+	"github.com/Jaytpa01/url-shortener-api/pkg/utils"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/httprate"
-	"github.com/go-chi/render"
 )
 
 func serveHTTP() {
 	logger := logger.NewApiLogger()
 
-	// create our router and setup rate limiting
-	router := chi.NewRouter()
-	router.Use(httprate.Limit(1, time.Second, httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
-		limitErr := api.NewTooManyRequests()
-		render.Status(r, http.StatusTooManyRequests)
-		render.JSON(w, r, limitErr)
-	})))
+	configPath := utils.GetConfigFilepathFromFilename("config.local.yaml")
+	config, err := config.LoadConfig(configPath)
+	if err != nil {
+		logger.Fatalf("couldn't load api configuratiom: %v", err)
+		return
+	}
 
 	// create our repo(s)
 	urlRepo := repository.NewInMemoryRepo()
@@ -39,12 +37,19 @@ func serveHTTP() {
 		UrlRepo: urlRepo,
 	})
 
+	// create our router
+	router := chi.NewRouter()
+
 	// create a new handler for our services.
-	// This handles mapping routes to their services
-	handler.NewHandler(&handler.Config{
+	cfg := &handler.Config{
 		Router:     router,
+		ApiConfig:  config,
 		UrlService: urlService,
-	})
+	}
+	err = handler.NewHandler(cfg)
+	if err != nil {
+		logger.Fatalf("couldn't create a valid api handler: %v", err)
+	}
 
 	httpServer := &http.Server{
 		Addr:    ":8080", // TODO: get port from config file
