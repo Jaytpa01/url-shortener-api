@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Jaytpa01/url-shortener-api/api"
 	"github.com/Jaytpa01/url-shortener-api/internal/entity"
 )
 
@@ -25,6 +24,10 @@ func (r *memoryRepo) Create(ctx context.Context, url *entity.Url) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if _, exists := r.urls[url.Token]; exists {
+		return ErrTokenAlreadyExists
+	}
+
 	r.urls[url.Token] = url
 	return nil
 }
@@ -36,7 +39,7 @@ func (r *memoryRepo) FindByToken(ctx context.Context, token string) (*entity.Url
 
 	url, ok := r.urls[token]
 	if !ok {
-		return nil, api.ErrUrlNotFound
+		return nil, ErrUrlNotFound
 	}
 
 	return url, nil
@@ -49,7 +52,7 @@ func (r *memoryRepo) Update(ctx context.Context, url *entity.Url) error {
 
 	_, ok := r.urls[url.Token]
 	if !ok {
-		return api.ErrUrlNotFound
+		return ErrUrlNotFound
 	}
 
 	r.urls[url.Token] = url
@@ -57,14 +60,14 @@ func (r *memoryRepo) Update(ctx context.Context, url *entity.Url) error {
 	return nil
 }
 
-func (r *memoryRepo) GetAll(ctx context.Context) ([]*entity.Url, error) {
+func (r *memoryRepo) GetAllUrls(ctx context.Context) ([]entity.Url, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	idx := 0
-	urls := make([]*entity.Url, len(r.urls))
+	urls := make([]entity.Url, len(r.urls))
 	for _, url := range r.urls {
-		urls[idx] = url
+		urls[idx] = *url
 		idx++
 	}
 
