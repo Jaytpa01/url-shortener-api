@@ -11,11 +11,11 @@ import (
 
 // RedirectToTargetUrl handles redirecting the user
 // to the target link from the generated link on our server
-func (h *Handler) RedirectToTargetUrl() http.HandlerFunc {
+func (h *handler) RedirectToTargetUrl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := chi.URLParam(r, "token")
 
-		url, err := h.urlService.GetUrlByToken(r.Context(), token)
+		url, err := h.urlService.FindUrlByToken(r.Context(), token)
 		if err != nil {
 			getUrlErr := api.EnsureApiError(err)
 
@@ -38,11 +38,11 @@ func (h *Handler) RedirectToTargetUrl() http.HandlerFunc {
 }
 
 // GetUrlVisits handles fetching the amount of unique vists a generated link has received.
-func (h *Handler) GetUrlVisits() http.HandlerFunc {
+func (h *handler) GetUrlVisits() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := chi.URLParam(r, "token")
 
-		url, err := h.urlService.GetUrlByToken(r.Context(), token)
+		url, err := h.urlService.FindUrlByToken(r.Context(), token)
 		if err != nil {
 			getUrlErr := api.EnsureApiError(err)
 
@@ -60,7 +60,7 @@ func (h *Handler) GetUrlVisits() http.HandlerFunc {
 }
 
 // ShortenUrl handles returning a shortened url
-func (h *Handler) ShortenUrl() http.HandlerFunc {
+func (h *handler) ShortenUrl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &api.CreateUrlRequest{}
 
@@ -99,7 +99,7 @@ func (h *Handler) ShortenUrl() http.HandlerFunc {
 
 // TODO: Write tests for this handler
 // LengthenUrl handles returning a longer url, this is a gimmick endpoint
-func (h *Handler) LengthenUrl() http.HandlerFunc {
+func (h *handler) LengthenUrl() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &api.CreateUrlRequest{}
 
@@ -130,5 +130,21 @@ func (h *Handler) LengthenUrl() http.HandlerFunc {
 
 		render.Status(r, http.StatusCreated)
 		render.JSON(w, r, apiResponse)
+	}
+}
+
+// GetAllUrls is a handler only available in a development environment. It
+// gets all urls in the repo and returns them
+func (h *handler) GetAllUrls() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		urls, err := h.urlService.GetAllUrls(r.Context())
+		if err != nil {
+			getErr := api.EnsureApiError(err)
+
+			render.Status(r, getErr.Status())
+			render.JSON(w, r, getErr)
+		}
+
+		render.JSON(w, r, urls)
 	}
 }

@@ -27,7 +27,7 @@ const (
 
 func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, "/"+token, nil)
 	rec := httptest.NewRecorder()
 
@@ -40,7 +40,7 @@ func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
 	}
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(mockResponse, nil)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(mockResponse, nil)
 	mockUrlService.On("IncrementUrlVisits", mock.Anything, mock.Anything).Return(nil)
 	mockResponse.Visits++
 
@@ -62,7 +62,7 @@ func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
 
 func TestHandler_Url_RedirectToTargetUrl_UrlDoesntExist(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, "/"+token, nil)
 	rec := httptest.NewRecorder()
 
@@ -70,7 +70,7 @@ func TestHandler_Url_RedirectToTargetUrl_UrlDoesntExist(t *testing.T) {
 	mockResponse := api.NewNotFound("url-not-found", mockMsg)
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(nil, mockResponse)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(nil, mockResponse)
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
@@ -88,14 +88,14 @@ func TestHandler_Url_RedirectToTargetUrl_UrlDoesntExist(t *testing.T) {
 
 func TestHandler_Url_RedirectToTargetUrl_UnknownErrorOccured(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, "/"+token, nil)
 	rec := httptest.NewRecorder()
 
 	unknownErr := errors.New("some unknown error")
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(nil, unknownErr)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(nil, unknownErr)
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
@@ -117,7 +117,7 @@ func TestHandler_Url_RedirectToTargetUrl_UnknownErrorOccured(t *testing.T) {
 
 func TestHandler_Url_RedirectToTargetUrl_FailedToIncrementVisits(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, "/"+token, nil)
 	rec := httptest.NewRecorder()
 
@@ -132,7 +132,7 @@ func TestHandler_Url_RedirectToTargetUrl_FailedToIncrementVisits(t *testing.T) {
 	unknownErr := errors.New("some unknown error")
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(mockResponse, nil)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(mockResponse, nil)
 	mockUrlService.On("IncrementUrlVisits", mock.Anything, mock.Anything).Return(unknownErr)
 
 	r := chi.NewRouter()
@@ -155,7 +155,7 @@ func TestHandler_Url_RedirectToTargetUrl_FailedToIncrementVisits(t *testing.T) {
 
 func TestHandler_Url_GetUrlVisits(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s/visits", token), nil)
 	rec := httptest.NewRecorder()
 
@@ -169,7 +169,7 @@ func TestHandler_Url_GetUrlVisits(t *testing.T) {
 	}
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(mockResponse, nil)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(mockResponse, nil)
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
@@ -187,7 +187,7 @@ func TestHandler_Url_GetUrlVisits(t *testing.T) {
 
 func TestHandler_Url_GetUrlVisits_UrlDoesntExist(t *testing.T) {
 	// setup
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s/visits", token), nil)
 	rec := httptest.NewRecorder()
 
@@ -195,7 +195,7 @@ func TestHandler_Url_GetUrlVisits_UrlDoesntExist(t *testing.T) {
 	mockResponse := api.NewNotFound("url-not-found", mockMsg)
 
 	mockUrlService := mocks.NewMockUrlService()
-	mockUrlService.On("GetUrlByToken", mock.Anything, token).Return(nil, mockResponse)
+	mockUrlService.On("FindUrlByToken", mock.Anything, token).Return(nil, mockResponse)
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
@@ -218,7 +218,7 @@ func TestHandler_Url_ShortenUrl(t *testing.T) {
 	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	rec := httptest.NewRecorder()
 
-	token := utils.GenerateRandomString(6)
+	token := utils.NewRandomiser().GenerateRandomString(6)
 	mockUrlResponse := &entity.Url{
 		Token:     token,
 		TargetUrl: exampleUrl,

@@ -11,6 +11,7 @@ import (
 type UrlService interface {
 	ShortenUrl(ctx context.Context, url string) (*entity.Url, error)
 	LengthenUrl(ctx context.Context, url string) (*entity.Url, error)
-	GetUrlByToken(ctx context.Context, token string) (*entity.Url, error)
+	FindUrlByToken(ctx context.Context, token string) (*entity.Url, error)
 	IncrementUrlVisits(ctx context.Context, url *entity.Url) error
+	GetAllUrls(ctx context.Context) ([]entity.Url, error)
 }
