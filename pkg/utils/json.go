@@ -51,20 +51,20 @@ func (d *decoder) DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) er
 		switch {
 		case errors.As(err, &syntaxError):
 			msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d).", syntaxError.Offset)
-			return api.NewBadRequest("json-syntax-error", msg)
+			return api.NewBadRequest("json/syntax-error", msg)
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
 			msg := "Request body contains badly-formed JSON."
-			return api.NewBadRequest("json-eof-error", msg)
+			return api.NewBadRequest("json/eof-error", msg)
 
 		case errors.As(err, &unmarshalTypeError):
 			msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d).", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return api.NewBadRequest("invalid-field-value", msg)
+			return api.NewBadRequest("json/invalid-field-value", msg)
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 			msg := fmt.Sprintf("Request body contains unknown field (%s).", fieldName)
-			return api.NewBadRequest("unknown-field", msg)
+			return api.NewBadRequest("json/unknown-field", msg)
 
 		case errors.Is(err, io.EOF):
 			msg := "Request body must not be empty."
