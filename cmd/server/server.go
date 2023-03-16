@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,14 +21,15 @@ import (
 )
 
 func serveHTTP() {
-	logger := logger.NewApiLogger()
 
 	configPath := utils.GetConfigFilepathFromFilename("config.local.yaml")
 	config, err := config.LoadConfig(configPath)
 	if err != nil {
-		logger.Fatalf("couldn't load api configuratiom: %v", err)
+		log.Fatalf("couldn't load api configuratiom: %v", err)
 		return
 	}
+
+	logger := logger.NewApiLogger(config.Server.Environment)
 
 	// create our repo(s)
 	urlRepo := repository.NewInMemoryRepo()
@@ -52,7 +55,7 @@ func serveHTTP() {
 	}
 
 	httpServer := &http.Server{
-		Addr:    ":8080", // TODO: get port from config file
+		Addr:    fmt.Sprintf(":%d", config.Server.Port),
 		Handler: router,
 	}
 
