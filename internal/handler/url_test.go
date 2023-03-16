@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Jaytpa01/url-shortener-api/api"
+	"github.com/Jaytpa01/url-shortener-api/config"
 	"github.com/Jaytpa01/url-shortener-api/internal/entity"
 	"github.com/Jaytpa01/url-shortener-api/internal/mocks"
 	"github.com/Jaytpa01/url-shortener-api/pkg/utils"
@@ -23,6 +24,10 @@ const (
 	contentTypeHeader = "Content-Type"
 	contentTypeJSON   = "application/json"
 	exampleUrl        = "https://example.com"
+)
+
+var (
+	apiConfig = &config.Config{Server: config.ServerConfig{Environment: "test"}}
 )
 
 func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
@@ -47,6 +52,7 @@ func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -58,6 +64,21 @@ func TestHandler_Url_RedirectToTargetUrl(t *testing.T) {
 	// Assertions
 	assert.Equal(t, http.StatusMovedPermanently, result.StatusCode)
 	assert.Equal(t, exampleUrl, redirectLocation.String())
+}
+
+func TestHandler_Url_GetIndex(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	NewHandler(&Config{
+		Router:    r,
+		ApiConfig: apiConfig,
+	})
+
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, "{\"status\":\"ok\"}", strings.Trim(rec.Body.String(), "\n"))
 }
 
 func TestHandler_Url_RedirectToTargetUrl_UrlDoesntExist(t *testing.T) {
@@ -75,6 +96,7 @@ func TestHandler_Url_RedirectToTargetUrl_UrlDoesntExist(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -100,6 +122,7 @@ func TestHandler_Url_RedirectToTargetUrl_UnknownErrorOccured(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -138,6 +161,7 @@ func TestHandler_Url_RedirectToTargetUrl_FailedToIncrementVisits(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -174,6 +198,7 @@ func TestHandler_Url_GetUrlVisits(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -200,6 +225,7 @@ func TestHandler_Url_GetUrlVisits_UrlDoesntExist(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -232,6 +258,7 @@ func TestHandler_Url_ShortenUrl(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -254,6 +281,7 @@ func TestHandler_Url_ShortenUrl_UnknownFieldError(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -262,7 +290,7 @@ func TestHandler_Url_ShortenUrl_UnknownFieldError(t *testing.T) {
 
 	// Assertions
 	assert.Equal(t, http.StatusBadRequest, result.StatusCode)
-	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"unknown-field\",\"message\":\"Request body contains unknown field (\\\"bad_field\\\").\"}", strings.Trim(rec.Body.String(), "\n"))
+	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"json/unknown-field\",\"message\":\"Request body contains unknown field (\\\"bad_field\\\").\"}", strings.Trim(rec.Body.String(), "\n"))
 }
 
 func TestHandler_Url_ShortenUrl_EofJSON(t *testing.T) {
@@ -274,7 +302,8 @@ func TestHandler_Url_ShortenUrl_EofJSON(t *testing.T) {
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
-		Router: r,
+		Router:    r,
+		ApiConfig: apiConfig,
 	})
 
 	r.ServeHTTP(rec, req)
@@ -282,7 +311,7 @@ func TestHandler_Url_ShortenUrl_EofJSON(t *testing.T) {
 
 	// Assertions
 	assert.Equal(t, http.StatusBadRequest, result.StatusCode)
-	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"json-eof-error\",\"message\":\"Request body contains badly-formed JSON.\"}", strings.Trim(rec.Body.String(), "\n"))
+	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"json/eof-error\",\"message\":\"Request body contains badly-formed JSON.\"}", strings.Trim(rec.Body.String(), "\n"))
 }
 
 func TestHandler_Url_ShortenUrl_JSONSyntaxError(t *testing.T) {
@@ -294,7 +323,8 @@ func TestHandler_Url_ShortenUrl_JSONSyntaxError(t *testing.T) {
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
-		Router: r,
+		Router:    r,
+		ApiConfig: apiConfig,
 	})
 
 	r.ServeHTTP(rec, req)
@@ -302,7 +332,7 @@ func TestHandler_Url_ShortenUrl_JSONSyntaxError(t *testing.T) {
 
 	// Assertions
 	assert.Equal(t, http.StatusBadRequest, result.StatusCode)
-	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"json-syntax-error\",\"message\":\"Request body contains badly-formed JSON (at position 8).\"}", strings.Trim(rec.Body.String(), "\n"))
+	assert.Equal(t, "{\"type\":\"BAD_REQUEST\",\"code\":\"json/syntax-error\",\"message\":\"Request body contains badly-formed JSON (at position 8).\"}", strings.Trim(rec.Body.String(), "\n"))
 }
 func TestHandler_Url_ShortenUrl_UnknownDecodeJSONError(t *testing.T) {
 	// setup
@@ -317,8 +347,9 @@ func TestHandler_Url_ShortenUrl_UnknownDecodeJSONError(t *testing.T) {
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
-		Router:  r,
-		Decoder: mockJSONDecoder,
+		Router:    r,
+		ApiConfig: apiConfig,
+		Decoder:   mockJSONDecoder,
 	})
 
 	r.ServeHTTP(rec, req)
@@ -340,7 +371,8 @@ func TestHandler_Url_ShortenUrl_EmptyRequestBody(t *testing.T) {
 
 	r := chi.NewRouter()
 	NewHandler(&Config{
-		Router: r,
+		Router:    r,
+		ApiConfig: apiConfig,
 	})
 
 	r.ServeHTTP(rec, req)
@@ -366,6 +398,7 @@ func TestHandler_Url_ShortenUrl_FailedToCreate(t *testing.T) {
 	r := chi.NewRouter()
 	NewHandler(&Config{
 		Router:     r,
+		ApiConfig:  apiConfig,
 		UrlService: mockUrlService,
 	})
 
@@ -379,4 +412,270 @@ func TestHandler_Url_ShortenUrl_FailedToCreate(t *testing.T) {
 	// Ensure apiError.Debug is correct
 	apiError := api.EnsureApiError(mockError)
 	assert.Equal(t, mockError.Error(), apiError.Debug)
+}
+
+func TestHandler_Url_LengthenUrl(t *testing.T) {
+	testCases := []struct {
+		name                       string
+		requestBody                string
+		url                        string
+		supplyInvalidContentHeader bool
+
+		useMockDecoder bool
+		decoderErr     error
+
+		serviceResponseUrl *entity.Url
+		serviceErr         error
+
+		expectedResponseStatus int
+		expectedResponseBody   string
+	}{
+		{
+			name:                   "Success",
+			requestBody:            "{\"url\":\"https://example.com\"}",
+			url:                    "https://example.com",
+			serviceResponseUrl:     &entity.Url{Token: "987654", TargetUrl: "https://example.com"},
+			expectedResponseStatus: http.StatusCreated,
+			expectedResponseBody:   fmt.Sprintf("{\"token\":\"987654\",\"target_url\":\"https://example.com\",\"qr_code\":\"%s\"}", utils.GenerateQRCodeLink("https://example.com")),
+		},
+		{
+			name:                   "Known Service Error",
+			requestBody:            "{\"url\":\"https://example.com\"}",
+			url:                    "https://example.com",
+			serviceErr:             api.NewBadRequest("oops/hahah", "haha oops"),
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"oops/hahah\",\"message\":\"haha oops\"}",
+		},
+		{
+			name:                   "Unknown Service Error",
+			requestBody:            "{\"url\":\"https://example.com\"}",
+			url:                    "https://example.com",
+			serviceErr:             errors.New("some unknown error"),
+			expectedResponseStatus: http.StatusInternalServerError,
+			expectedResponseBody:   "{\"type\":\"INTERNAL\",\"code\":\"unknown\",\"message\":\"An internal server error occured.\"}",
+		},
+		{
+			name:                       "Invalid Content-Type Header",
+			requestBody:                "hello",
+			supplyInvalidContentHeader: true,
+			expectedResponseStatus:     http.StatusUnsupportedMediaType,
+		},
+		{
+			name:        "Malformed JSON",
+			requestBody: "{\"url\"}",
+
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"json/syntax-error\",\"message\":\"Request body contains badly-formed JSON (at position 7).\"}",
+		},
+		{
+			name:        "Malformed JSON EOF",
+			requestBody: "{\"ur",
+
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"json/eof-error\",\"message\":\"Request body contains badly-formed JSON.\"}",
+		},
+		{
+			name:                   "Unknown Failed To Decode JSON Error",
+			requestBody:            "{\"url\":\"https://example.com\"}",
+			useMockDecoder:         true,
+			decoderErr:             errors.New("some decode error"),
+			expectedResponseStatus: http.StatusInternalServerError,
+			expectedResponseBody:   "{\"type\":\"INTERNAL\",\"code\":\"unknown\",\"message\":\"An internal server error occured.\"}",
+		},
+		{
+			name:                   "Invalid JSON Field",
+			requestBody:            "{\"url\":\"https://example.com\",\"some_other_field\":\"oh boy i sure am some random field\"}",
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"json/unknown-field\",\"message\":\"Request body contains unknown field (\\\"some_other_field\\\").\"}",
+		},
+		{
+			name:                   "Empty Request Body",
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"no-empty-requests\",\"message\":\"Request body must not be empty.\"}",
+		},
+		{
+			name:                   "Invalid JSON Value for Field",
+			requestBody:            "{\"url\":2}",
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"json/invalid-field-value\",\"message\":\"Request body contains an invalid value for the \\\"url\\\" field (at position 8).\"}",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			// setup
+			var req *http.Request
+			if test.requestBody != "" {
+				reader := strings.NewReader(test.requestBody)
+				req = httptest.NewRequest(http.MethodPost, "/lengthen", reader)
+			} else {
+				req = httptest.NewRequest(http.MethodPost, "/lengthen", nil)
+			}
+
+			if !test.supplyInvalidContentHeader {
+				req.Header.Set(contentTypeHeader, contentTypeJSON)
+			}
+			rec := httptest.NewRecorder()
+
+			mockUrlService := mocks.NewMockUrlService()
+			mockUrlService.On("LengthenUrl", mock.Anything, test.url).Return(test.serviceResponseUrl, test.serviceErr)
+
+			r := chi.NewRouter()
+			handlerConfig := &Config{Router: r, UrlService: mockUrlService, ApiConfig: apiConfig}
+			if test.useMockDecoder {
+				mockDecoder := mocks.NewMockJSONDecoder()
+				mockDecoder.On("DecodeJSON", mock.Anything, mock.Anything, mock.AnythingOfType("*api.CreateUrlRequest")).Return(test.decoderErr)
+				handlerConfig.Decoder = mockDecoder
+			} else {
+				handlerConfig.Decoder = utils.NewJSONDecoder()
+			}
+
+			NewHandler(handlerConfig)
+			r.ServeHTTP(rec, req)
+			result := rec.Result()
+
+			// Assertions
+			assert.Equal(t, test.expectedResponseStatus, result.StatusCode)
+			assert.Equal(t, test.expectedResponseBody, strings.Trim(rec.Body.String(), "\n"))
+		})
+	}
+}
+
+func TestHandler_Url_GetAllUrls(t *testing.T) {
+	testCases := []struct {
+		name string
+
+		serviceResp []entity.Url
+		serviceErr  error
+
+		expectedResponseStatus int
+		expectedResponseBody   string
+	}{
+		{
+			name:                   "Success",
+			serviceResp:            []entity.Url{},
+			expectedResponseStatus: http.StatusOK,
+			expectedResponseBody:   "[]",
+		},
+		{
+			name:                   "Known Service Error",
+			serviceErr:             api.NewBadRequest("bad", "bad message"),
+			expectedResponseStatus: http.StatusBadRequest,
+			expectedResponseBody:   "{\"type\":\"BAD_REQUEST\",\"code\":\"bad\",\"message\":\"bad message\"}",
+		},
+		{
+			name:                   "Unknown Service Error",
+			serviceErr:             errors.New("whoops"),
+			expectedResponseStatus: http.StatusInternalServerError,
+			expectedResponseBody:   "{\"type\":\"INTERNAL\",\"code\":\"unknown\",\"message\":\"An internal server error occured.\"}",
+		},
+	}
+
+	for _, test := range testCases {
+		// setup
+		req := httptest.NewRequest(http.MethodGet, "/all", nil)
+		rec := httptest.NewRecorder()
+
+		mockUrlService := mocks.NewMockUrlService()
+		mockUrlService.On("GetAllUrls", mock.Anything).Return(test.serviceResp, test.serviceErr)
+
+		r := chi.NewRouter()
+		handlerConfig := &Config{Router: r, UrlService: mockUrlService, ApiConfig: &config.Config{Server: config.ServerConfig{Environment: "dev"}}}
+		NewHandler(handlerConfig)
+		r.ServeHTTP(rec, req)
+		result := rec.Result()
+
+		// Assertions
+		assert.Equal(t, test.expectedResponseStatus, result.StatusCode)
+		assert.Equal(t, test.expectedResponseBody, strings.Trim(rec.Body.String(), "\n"))
+	}
+}
+
+func TestHandler_NewHandler(t *testing.T) {
+	testCases := []struct {
+		name          string
+		config        *Config
+		expectedError error
+	}{
+		{
+			name: "Valid Config",
+			config: &Config{
+				Router:     chi.NewRouter(),
+				ApiConfig:  &config.Config{},
+				UrlService: mocks.NewMockUrlService(),
+			},
+			expectedError: nil,
+		},
+		{
+			name:          "Invalid ApiConfig",
+			config:        &Config{},
+			expectedError: errors.New("ApiConfig was nil"),
+		},
+		{
+			name: "Invalid Router",
+			config: &Config{
+				ApiConfig: &config.Config{},
+			},
+			expectedError: errors.New("router was nil"),
+		},
+		{
+			name: "Invalid Service",
+			config: &Config{
+				Router:    chi.NewRouter(),
+				ApiConfig: &config.Config{},
+			},
+			expectedError: errors.New("UrlService was nil"),
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			err := NewHandler(test.config)
+			assert.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
+func TestHandler_RateLimit(t *testing.T) {
+	testCases := []struct {
+		name      string
+		respCodes []int
+	}{
+		{
+			name:      "Not Reach Limit",
+			respCodes: []int{200, 200, 200},
+		},
+		{
+			name:      "Not Reach Limit",
+			respCodes: []int{200, 200, 200, 200, 200, 200, 200, 200, 200, 200, http.StatusTooManyRequests},
+		},
+	}
+
+	for _, test := range testCases {
+
+		t.Run(test.name, func(t *testing.T) {
+			// setup
+			r := chi.NewRouter()
+			handlerConfig := &Config{Router: r, ApiConfig: apiConfig}
+			NewHandler(handlerConfig)
+
+			for _, code := range test.respCodes {
+				req := httptest.NewRequest("GET", "/", nil)
+				rec := httptest.NewRecorder()
+				r.ServeHTTP(rec, req)
+				assert.Equal(t, code, rec.Result().StatusCode)
+
+				var expectedResponseBody string
+				if rec.Result().StatusCode == http.StatusOK {
+					expectedResponseBody = "{\"status\":\"ok\"}"
+				} else if rec.Result().StatusCode == http.StatusTooManyRequests {
+					expectedResponseBody = "{\"type\":\"TOO_MANY_REQUESTS\",\"code\":\"api/too-many-requests\",\"message\":\"You are sending too many requests to the server.\",\"action\":\"C'mon buddy, please slow down. You are limited to 1 request/second.\"}"
+				}
+
+				assert.Equal(t, expectedResponseBody, strings.Trim(rec.Body.String(), "\n"))
+
+			}
+
+		})
+	}
 }
