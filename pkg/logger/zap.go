@@ -12,11 +12,18 @@ type apiLogger struct {
 }
 
 // NewApiLogger initialises a sugared zap logger.
-func NewApiLogger() Logger {
+func NewApiLogger(environment string) Logger {
 
-	// TODO: implement choosing a development or production logger based off of a config
+	var cfg zap.Config
+	switch environment {
+	case "dev", "development", "local":
+		cfg = zap.NewDevelopmentConfig()
+	case "prod", "production":
+		fallthrough
+	default:
+		cfg = zap.NewProductionConfig()
+	}
 
-	cfg := zap.NewDevelopmentConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	logger, err := cfg.Build(zap.AddCaller(), zap.AddCallerSkip(1))
