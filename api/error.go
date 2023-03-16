@@ -3,6 +3,8 @@ package api
 import (
 	"errors"
 	"net/http"
+
+	"github.com/go-chi/render"
 )
 
 // ErrorType holds a string and represents the integer HTTP status code for the error
@@ -34,6 +36,13 @@ type ApiError struct {
 // ApiError.Error() satisfies the standard error interface
 func (ae *ApiError) Error() string {
 	return ae.Message
+}
+
+// returnApiError is a helper function to ensure any errors we want to return to the client conform to our standard error response
+func ReturnApiError(w http.ResponseWriter, r *http.Request, err error) {
+	apiErr := EnsureApiError(err)
+	render.Status(r, apiErr.Status())
+	render.JSON(w, r, apiErr)
 }
 
 // Option type allows us to implement optional functional parameters
@@ -156,7 +165,7 @@ func NewRequestPayloadTooLarge(code, msg string, opts ...ErrorOption) *ApiError 
 func NewTooManyRequests() *ApiError {
 	return &ApiError{
 		Type:    TooManyRequests,
-		Code:    "too-many-requests",
+		Code:    "api/too-many-requests",
 		Message: "You are sending too many requests to the server.",
 		Action:  "C'mon buddy, please slow down. You are limited to 1 request/second.",
 	}
