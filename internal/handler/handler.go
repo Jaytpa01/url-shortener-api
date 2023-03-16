@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -24,9 +25,25 @@ type Config struct {
 	UrlService service.UrlService
 }
 
-// validate is used to validate the handler config based off of the current environment (i.e development, production)
+// validate is used to validate the handler config
 // TODO: implement validating config
 func (c *Config) validate() error {
+	if c.ApiConfig == nil {
+		return errors.New("ApiConfig was nil")
+	}
+
+	if c.ApiConfig.Server.Environment == "test" {
+		return nil
+	}
+
+	if c.Router == nil {
+		return errors.New("router was nil")
+	}
+
+	if c.UrlService == nil {
+		return errors.New("UrlService was nil")
+	}
+
 	return nil
 }
 
