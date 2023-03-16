@@ -26,7 +26,6 @@ type Config struct {
 }
 
 // validate is used to validate the handler config
-// TODO: implement validating config
 func (c *Config) validate() error {
 	if c.ApiConfig == nil {
 		return errors.New("ApiConfig was nil")

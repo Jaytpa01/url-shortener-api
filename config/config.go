@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+// TODO: implement config validation and default values
+
 type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 }
