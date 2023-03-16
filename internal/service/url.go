@@ -15,9 +15,7 @@ import (
 )
 
 const (
-	// TODO: Inject this value via a config
-	TOKEN_LENGTH = 6
-
+	TOKEN_LENGTH                = 6  // length of tokens we generate
 	LENGTHEN_TOKEN_SCALE_FACTOR = 2  // double the length of URLs
 	MINIMUM_LONG_TOKEN_LENGTH   = 42 // the mimimum length that a lengthened token should be
 )
