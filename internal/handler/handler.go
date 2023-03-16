@@ -69,8 +69,8 @@ func NewHandler(cfg *Config) error {
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Content-Type", "X-CSRF-Token"},
 		MaxAge:         300, // Maximum value not ignored by any of major browsers
 	}))
 
@@ -81,8 +81,12 @@ func NewHandler(cfg *Config) error {
 	})
 	r.Get("/{token}", h.RedirectToTargetUrl())
 	r.Get("/{token}/visits", h.GetUrlVisits())
-	r.Post("/shorten", h.ShortenUrl())
-	r.Post("/lengthen", h.LengthenUrl())
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AllowContentType("application/json"))
+		r.Post("/shorten", h.ShortenUrl())
+		r.Post("/lengthen", h.LengthenUrl())
+	})
 
 	if h.apiConfig != nil {
 		switch h.apiConfig.Server.Environment {
