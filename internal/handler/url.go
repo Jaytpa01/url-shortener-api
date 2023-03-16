@@ -17,19 +17,13 @@ func (h *handler) RedirectToTargetUrl() http.HandlerFunc {
 
 		url, err := h.urlService.FindUrlByToken(r.Context(), token)
 		if err != nil {
-			getUrlErr := api.EnsureApiError(err)
-
-			render.Status(r, getUrlErr.Status())
-			render.JSON(w, r, getUrlErr)
+			returnApiError(w, r, err)
 			return
 		}
 
 		err = h.urlService.IncrementUrlVisits(r.Context(), url)
 		if err != nil {
-			incrementErr := api.EnsureApiError(err)
-
-			render.Status(r, incrementErr.Status())
-			render.JSON(w, r, incrementErr)
+			returnApiError(w, r, err)
 			return
 		}
 
@@ -44,10 +38,7 @@ func (h *handler) GetUrlVisits() http.HandlerFunc {
 
 		url, err := h.urlService.FindUrlByToken(r.Context(), token)
 		if err != nil {
-			getUrlErr := api.EnsureApiError(err)
-
-			render.Status(r, getUrlErr.Status())
-			render.JSON(w, r, getUrlErr)
+			returnApiError(w, r, err)
 			return
 		}
 
@@ -67,20 +58,14 @@ func (h *handler) ShortenUrl() http.HandlerFunc {
 		// decode request payload
 		err := h.decoder.DecodeJSON(w, r, req)
 		if err != nil {
-			decodeErr := api.EnsureApiError(err)
-
-			render.Status(r, decodeErr.Status())
-			render.JSON(w, r, decodeErr)
+			returnApiError(w, r, err)
 			return
 		}
 
 		// create a shortened url
 		createdUrl, err := h.urlService.ShortenUrl(r.Context(), req.Url)
 		if err != nil {
-			createUrlErr := api.EnsureApiError(err)
-
-			render.Status(r, createUrlErr.Status())
-			render.JSON(w, r, createUrlErr)
+			returnApiError(w, r, err)
 			return
 		}
 
@@ -105,19 +90,13 @@ func (h *handler) LengthenUrl() http.HandlerFunc {
 
 		err := h.decoder.DecodeJSON(w, r, req)
 		if err != nil {
-			decodeErr := api.EnsureApiError(err)
-
-			render.Status(r, decodeErr.Status())
-			render.JSON(w, r, decodeErr)
+			returnApiError(w, r, err)
 			return
 		}
 
 		createdUrl, err := h.urlService.LengthenUrl(r.Context(), req.Url)
 		if err != nil {
-			createUrlErr := api.EnsureApiError(err)
-
-			render.Status(r, createUrlErr.Status())
-			render.JSON(w, r, createUrlErr)
+			returnApiError(w, r, err)
 			return
 		}
 
@@ -139,12 +118,17 @@ func (h *handler) GetAllUrls() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		urls, err := h.urlService.GetAllUrls(r.Context())
 		if err != nil {
-			getErr := api.EnsureApiError(err)
-
-			render.Status(r, getErr.Status())
-			render.JSON(w, r, getErr)
+			returnApiError(w, r, err)
+			return
 		}
 
 		render.JSON(w, r, urls)
 	}
+}
+
+// returnApiError is a helper function to ensure any errors we return to the client conform to our standard error response
+func returnApiError(w http.ResponseWriter, r *http.Request, err error) {
+	apiErr := api.EnsureApiError(err)
+	render.Status(r, apiErr.Status())
+	render.JSON(w, r, apiErr)
 }
