@@ -24,3 +24,6 @@ go.work
 # Anything in /etc directory.
 # Holds thing like config files with secrets
 /etc
+
+# sqlite db files
+*.db
