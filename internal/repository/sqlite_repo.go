@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Jaytpa01/url-shortener-api/internal/entity"
 	"github.com/jmoiron/sqlx"
@@ -12,9 +13,14 @@ type sqliteRepository struct {
 }
 
 func NewSQLiteRepository() (UrlRepository, error) {
+	db, err := sqlx.Connect("sqlite3", "./db/url.db")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't connect to sqlite database: %w", err)
+	}
 
-	// db, err := sqlx.Connect("sqlite3")
-	repo := &sqliteRepository{}
+	repo := &sqliteRepository{
+		db: db,
+	}
 
 	return repo, nil
 }
