@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Jaytpa01/url-shortener-api/internal/entity"
@@ -26,7 +28,18 @@ func NewSQLiteRepository() (UrlRepository, error) {
 }
 
 func (s *sqliteRepository) FindByToken(ctx context.Context, token string) (*entity.Url, error) {
-	panic("unimplemented") // TODO: implement
+	url := &entity.Url{}
+
+	err := s.db.GetContext(ctx, &url, "SELECT * FROM url WHERE token = ?", token)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUrlNotFound
+		}
+
+		return nil, err
+	}
+
+	return url, nil
 }
 
 func (s *sqliteRepository) Create(ctx context.Context, url *entity.Url) error {
