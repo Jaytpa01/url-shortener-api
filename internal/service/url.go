@@ -67,6 +67,7 @@ func (u *urlService) ShortenUrl(ctx context.Context, url string) (*entity.Url, e
 				newUrl.Token = u.random.GenerateRandomString(TOKEN_LENGTH)
 				continue
 			} else {
+				u.logger.Infof("couldnt create url: %v", err)
 				return nil, api.NewInternal("url/couldnt-shorten", api.WithDebug(err.Error()))
 			}
 		}
@@ -135,7 +136,7 @@ func (u *urlService) FindUrlByToken(ctx context.Context, token string) (*entity.
 		}
 
 		apiErr := api.NewInternal("url/internal", api.WithDebug(err.Error()))
-		u.logger.Info("Couldn't retrieve URL", apiErr)
+		u.logger.Info("Couldn't retrieve URL: %v", err)
 
 		return nil, apiErr
 	}
