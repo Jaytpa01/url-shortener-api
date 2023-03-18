@@ -32,8 +32,7 @@ func serveHTTP() {
 	logger := logger.NewApiLogger(config.Server.Environment)
 
 	// create our repo(s)
-	// urlRepo := repository.NewInMemoryRepo()
-	urlRepo, err := repository.NewSQLiteRepository()
+	urlRepo, err := repository.NewSQLiteRepository("./db/url.db")
 	if err != nil {
 		logger.Fatalf("couldnt connect to sqlite database: %v", err)
 	}
