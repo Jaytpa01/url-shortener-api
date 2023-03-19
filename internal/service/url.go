@@ -54,7 +54,7 @@ func (u *urlService) ShortenUrl(ctx context.Context, url string) (*entity.Url, e
 	newUrl := &entity.Url{
 		Token:     u.random.GenerateRandomString(TOKEN_LENGTH),
 		TargetUrl: url,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	var err error
@@ -96,6 +96,7 @@ func (u *urlService) LengthenUrl(ctx context.Context, url string) (*entity.Url, 
 	newUrl := &entity.Url{
 		Token:     u.random.GenerateRandomString(utils.Max(MINIMUM_LONG_TOKEN_LENGTH, len(url)*LENGTHEN_TOKEN_SCALE_FACTOR)),
 		TargetUrl: url,
+		CreatedAt: time.Now().UTC(),
 	}
 
 	var err error
